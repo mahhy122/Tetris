@@ -129,10 +129,10 @@ const App: React.FC = () => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (isGameOver) return;
 
-      if (e.key === "KeyA") moveBlock(0, -1);
-      if (e.key === "KeyD") moveBlock(0, 1);
-      if (e.key === "KeyS") moveBlock(1, 0);
-      if (e.key === "KeyW") {
+      if (e.key === "a" || e.key === "h") moveBlock(0, -1);
+      if (e.key === "d" || e.key === "l") moveBlock(0, 1);
+      if (e.key === "s" || e.key === "j") moveBlock(1, 0);
+      if (e.key === "w" || e.key === "k") {
         const rotatedBlock = rotateBlock(currentBlock);
         if (!isColliding(rotatedBlock, blockPos, field)) {
           setCurrentBlock(rotatedBlock);
