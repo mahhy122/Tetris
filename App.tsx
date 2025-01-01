@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 
-const ROWS = 20;
-const COLS = 10;
+// フィールドサイズ
+const ROWS1 = 20;
+const COLS1 = 10;
 
-//block list
+const ROWS2 = 6;
+const COLS2 = 6;
+
+// ブロックの形状（Tetrisの7種類）
 const BLOCKS = {
-  I: [
-    [1, 1, 1, 1]
-  ],
+  I: [[1, 1, 1, 1]],
   O: [
     [1, 1],
     [1, 1],
@@ -34,22 +36,29 @@ const BLOCKS = {
     [1, 1, 1],
   ],
 };
-//typeは方宣言
+
+// 型定義
 type Block = number[][];
 type Field = number[][];
 
-const createField = (): Field =>
-  Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+// 初期状態のフィールドを作成
+const createField1 = (): Field =>
+  Array.from({ length: ROWS1 }, () => Array(COLS1).fill(0));
 
-//rotate block
+const createField2 = (): Field =>
+  Array.from({length: ROWS2}, () => Array(COLS2).fill(0));
+
+// 回転アルゴリズム
 const rotateBlock = (block: Block): Block =>
   block[0].map((_, index) => block.map((row) => row[index]).reverse());
 
 const App: React.FC = () => {
   // 状態管理
-  const [field, setField] = useState<Field>(createField());
+  const [field, setField1] = useState<Field>(createField1());
+  const [field2, setField2] = useState<Field>(createField2());
   const [currentBlock, setCurrentBlock] = useState<Block>(BLOCKS.T); // 初期ブロック
-  const [blockPos, setBlockPos] = useState({ row: 0, col: Math.floor(COLS / 2) - 1 });
+  const currentBlock2 = currentBlock;
+  const [blockPos, setBlockPos] = useState({ row: 0, col: Math.floor(COLS1 / 2) - 1 });
   const [isGameOver, setIsGameOver] = useState(false);
 
   // 衝突判定
@@ -61,7 +70,10 @@ const App: React.FC = () => {
           const newCol = pos.col + c;
 
           if (
-            newRow >= ROWS || newCol < 0 || newCol >= COLS || (newRow >= 0 && field[newRow][newCol] !== 0) // ブロック同士の衝突
+            newRow >= ROWS1 || // 下部衝突
+            newCol < 0 || // 左壁衝突
+            newCol >= COLS1 || // 右壁衝突
+            (newRow >= 0 && field[newRow][newCol] !== 0) // ブロック同士の衝突
           ) {
             return true;
           }
@@ -74,22 +86,25 @@ const App: React.FC = () => {
   // ブロックを固定
   const fixBlock = () => {
     const newField = [...field];
+    const newField2 = [...field2];
     currentBlock.forEach((row, r) => {
       row.forEach((cell, c) => {
         if (cell !== 0 && blockPos.row + r >= 0) {
           newField[blockPos.row + r][blockPos.col + c] = cell;
+
         }
       });
     });
-    setField(newField);
+    setField1(newField);
+    setField2(newField2);
   };
 
   // ライン削除
   const clearLines = (field: Field): Field => {
     const clearedField = field.filter((row) => row.some((cell) => cell === 0));
-    const linesCleared = ROWS - clearedField.length;
-    const newRows = Array.from({ length: linesCleared }, () => Array(COLS).fill(0));
-    return [...newRows, ...clearedField];
+    const linesCleared = ROWS1 - clearedField.length;
+    const newROWS1 = Array.from({ length: linesCleared }, () => Array(COLS1).fill(0));
+    return [...newROWS1, ...clearedField];
   };
 
   // 新しいブロックを生成
@@ -97,7 +112,7 @@ const App: React.FC = () => {
     const blockKeys = Object.keys(BLOCKS) as (keyof typeof BLOCKS)[];
     const randomKey = blockKeys[Math.floor(Math.random() * blockKeys.length)];
     setCurrentBlock(BLOCKS[randomKey]);
-    setBlockPos({ row: 0, col: Math.floor(COLS / 2) - 1 });
+    setBlockPos({ row: 0, col: Math.floor(COLS1 / 2) - 1 });
   };
 
   // ゲームの進行（タイマー）
@@ -109,10 +124,10 @@ const App: React.FC = () => {
 
       if (isColliding(currentBlock, newPos, field)) {
         fixBlock();
-        setField((prevField) => clearLines(prevField));
+        setField1((prevField) => clearLines(prevField));
         generateNewBlock();
 
-        if (isColliding(currentBlock, { row: 0, col: Math.floor(COLS / 2) - 1 }, field)) {
+        if (isColliding(currentBlock, { row: 0, col: Math.floor(COLS1 / 2) - 1 }, field)) {
           setIsGameOver(true);
         }
       } else {
@@ -122,17 +137,17 @@ const App: React.FC = () => {
 
     const timer = setInterval(drop, 500);
     return () => clearInterval(timer);
-  }, [field, blockPos, currentBlock, isGameOver]);
+  }, [field, blockPos, currentBlock, isGameOver, currentBlock2]);
 
   // キーボード入力
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (isGameOver) return;
 
-      if (e.key === "a" || e.key === "h") moveBlock(0, -1);
-      if (e.key === "d" || e.key === "l") moveBlock(0, 1);
-      if (e.key === "s" || e.key === "j") moveBlock(1, 0);
-      if (e.key === "w" || e.key === "k") {
+      if (e.key === "ArrowLeft") moveBlock(0, -1);
+      if (e.key === "ArrowRight") moveBlock(0, 1);
+      if (e.key === "ArrowDown") moveBlock(1, 0);
+      if (e.key === "ArrowUp") {
         const rotatedBlock = rotateBlock(currentBlock);
         if (!isColliding(rotatedBlock, blockPos, field)) {
           setCurrentBlock(rotatedBlock);
@@ -154,7 +169,7 @@ const App: React.FC = () => {
   return (
     <div className="game">
       <h1>Tetris</h1>
-      <div className="field">
+      <div className="field1">
         {field.map((row, r) =>
           row.map((cell, c) => (
             <div key={`${r}-${c}`} className={`cell ${cell !== 0 ? "filled" : ""}`}></div>
@@ -174,7 +189,28 @@ const App: React.FC = () => {
           )
         )}
       </div>
-      {isGameOver && <h2>Failed</h2>}
+      <div className="field2">
+        {field2.map((row, r) =>
+          row.map((cell, c) => (
+            <div key={`${r}-${c}`} className={`cell ${cell !== 0 ? "filled" : ""}`}></div>
+          ))
+        )}
+        {currentBlock2.map((row, r) =>
+          row.map((cell, c) =>
+            cell !== 0 ? (
+              <div
+                key={`block-${r}-${c}`}
+                className="cell filled block"
+                style={{
+                  transform: `translate(${(c+ Math.floor(COLS2 / 2) - 1) * 20}px, ${(r+ Math.floor(COLS2 / 2) - 1) * 20}px)`,
+                }}
+              ></div>
+            ) : null
+          )
+        )}
+        
+      </div>
+      {isGameOver && <h2>Game Over</h2>}
     </div>
   );
 };
